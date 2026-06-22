@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>메이플 환산 주스탯 계산기</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-leaf">🍁</span>
+      <span class="logo-title">환산 주스탯 계산기</span>
+    </div>
+    <p class="logo-sub">MapleStory · NEXON Open API</p>
+  </div>
+</header>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('info')">캐릭터 정보</button>
+  <button class="tab-btn" onclick="switchTab('compare')">비교하기</button>
+</div>
+
+<main class="container">
+
+  <!-- ========== 탭1: 캐릭터 정보 ========== -->
+  <section id="tab-info" class="tab-content">
+
+    <div class="search-bar card">
+      <input id="info-input" class="search-input" type="text" placeholder="닉네임 입력 후 Enter 또는 검색" maxlength="15"/>
+      <button class="btn btn-search" onclick="searchCharacter()">검색</button>
+    </div>
+
+    <div id="info-loading" class="loading hidden"><div class="spinner"></div><span>불러오는 중...</span></div>
+    <div id="info-error"   class="global-error hidden"><span>⚠</span><span id="info-error-msg"></span></div>
+
+    <div id="char-detail" class="hidden">
+
+      <!-- 프로필 헤더 -->
+      <div class="profile-header card">
+        <div class="profile-left">
+          <div class="profile-img-wrap">
+            <img id="prof-img" class="profile-img" src="" alt="캐릭터"/>
+          </div>
+        </div>
+        <div class="profile-info">
+          <div class="prof-world-class">
+            <span id="prof-world" class="prof-world"></span>
+            <span id="prof-class" class="prof-class"></span>
+          </div>
+          <h2 id="prof-name" class="prof-name"></h2>
+          <div id="prof-meta" class="prof-meta"></div>
+        </div>
+        <div class="profile-right">
+          <div class="converted-big">
+            <div class="converted-label">환산 주스탯</div>
+            <div id="prof-converted" class="converted-value"></div>
+            <div id="prof-stat-type" class="converted-type"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 핵심 스탯 요약 -->
+      <div id="stat-summary" class="stat-summary"></div>
+
+      <!-- 본문: 좌(장비그리드+어빌+심볼) / 우(아이템 리스트) -->
+      <div class="detail-body">
+
+        <div class="detail-left">
+          <div class="detail-block card">
+            <h3 class="block-title">장착 장비</h3>
+            <div id="equip-grid" class="equip-grid"></div>
+          </div>
+          <div id="ability-block" class="detail-block card hidden">
+            <h3 class="block-title">어빌리티</h3>
+            <div id="ability-content"></div>
+          </div>
+          <div id="symbol-block" class="detail-block card hidden">
+            <h3 class="block-title">심볼</h3>
+            <div id="symbol-content" class="symbol-list"></div>
+          </div>
+        </div>
+
+        <div class="detail-right">
+          <div class="detail-block card">
+            <h3 class="block-title">아이템 리스트</h3>
+            <div id="item-list" class="item-list"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 탭2: 비교하기 ========== -->
+  <section id="tab-compare" class="tab-content hidden">
+
+    <div class="card input-section">
+      <h2 class="section-title">캐릭터 비교</h2>
+      <p class="section-desc">닉네임을 입력하고 비교하기를 누르세요. 최대 10명까지 동시 비교 가능합니다.</p>
+      <div id="nickname-list" class="nickname-list">
+        <div class="nickname-row" data-id="1">
+          <input type="text" class="nickname-input" placeholder="닉네임 입력" maxlength="15"/>
+          <button class="btn-remove" onclick="removeRow(1)">✕</button>
+        </div>
+      </div>
+      <div class="input-actions">
+        <button class="btn btn-add" onclick="addRow()">+ 닉네임 추가</button>
+        <button class="btn btn-compare" onclick="compare()">🔍 비교하기</button>
+      </div>
+    </div>
+
+    <div id="cmp-loading" class="loading hidden"><div class="spinner"></div><span>불러오는 중...</span></div>
+    <div id="cmp-error"   class="global-error hidden"><span>⚠</span><span id="cmp-error-msg"></span></div>
+
+    <section id="results-section" class="hidden">
+      <div id="character-cards" class="character-cards"></div>
+      <div class="table-wrapper">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>#</th><th style="text-align:left">닉네임</th><th>직업</th><th>레벨</th><th>서버</th>
+              <th>주스탯 종류</th><th>주스탯</th><th>부스탯환산</th><th>공/마환산</th>
+              <th>데미지%</th><th>보스%</th><th>방무%</th><th>크뎀%</th><th>최종%</th>
+              <th class="col-total">환산 주스탯</th>
+            </tr>
+          </thead>
+          <tbody id="compare-tbody"></tbody>
+        </table>
+      </div>
+      <div id="contribution-section" class="contribution-section">
+        <h3 class="section-title">항목별 기여도</h3>
+        <div id="contribution-bars" class="contribution-bars"></div>
+      </div>
+      <div class="formula-note card">
+        <h4>📐 계산 공식</h4>
+        <p>BASE = 주스탯 + 부스탯 ÷ 4 + 공격력(마력) × 4</p>
+        <p>환산 주스탯 = BASE × (1 + 데미지% + 보스% + 최종%) + BASE × 크뎀% × 0.5</p>
+        <p class="note-small">※ 커뮤니티 기반 근사 공식. 방어율 무시는 별도 표시.</p>
+      </div>
+    </section>
+
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>Data based on NEXON Open API</p>
+  <p class="footer-sub">비공식 계산기 &nbsp;·&nbsp; KST 기준 전날 데이터</p>
+</footer>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
